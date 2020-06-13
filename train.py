@@ -23,7 +23,7 @@ IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 160
 IMAGE_CHANNELS = 3
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 500
 BATCH_SIZE = 64
 
 
@@ -42,13 +42,13 @@ if __name__ == "__main__":
     num_classes = len(classes)
 
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-        rotation_range=50,  # degrees
-        width_shift_range=0.9,  # interval [-1.0, 1.0)
-        height_shift_range=0.9,  # interval [-1.0, 1.0)
+        rotation_range=30,  # degrees
+        width_shift_range=0.2,  # interval [-1.0, 1.0)
+        height_shift_range=0.2,  # interval [-1.0, 1.0)
         brightness_range=[0.2, 0.8],  # 0 no brightness, 1 max brightness
         shear_range=0.2,  # stretching in degrees
-        zoom_range=[0.5, 1.5],  # less than 1.0 zoom in, more than 1.0 zoom out
-        channel_shift_range=175.0,
+        #zoom_range=[0.5, 1.5],  # less than 1.0 zoom in, more than 1.0 zoom out
+        channel_shift_range=75.0,
         # zca_whitening=True,
         # channel_shift_range,
         # horizontal_flip=True,
@@ -67,7 +67,8 @@ if __name__ == "__main__":
         #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
-    next(train_data_gen)
+    #next(train_data_gen)
+    #quit()
 
     m = tf.keras.Sequential()
 
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     ))
 
     m.compile(
-        loss=tf.keras.losses.BinaryCrossentropy,
+        loss=tf.keras.losses.sparse_categorical_crossentropy,
         optimmizer=tf.keras.optimizers.Adam(0.0001),
         metrics=["accuracy"]
     )
@@ -194,10 +195,17 @@ if __name__ == "__main__":
 
     model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
 
-    image = cv2.imread(os.path.join(os.getcwd(), "test\\manc.png"))
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
-    image = np.array(image).astype(np.float) / 255.0
-    image = np.expand_dims(image, 0)
-    prediction = model.predict(image)
-    print(int2class[int(np.argmax(prediction))])
+    test_images = [
+        "manc.png",
+        "manc_cropped.jpg",
+        "mancw.jpg"
+    ]
+
+    for ti in test_images:
+        image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+        image = np.array(image).astype(np.float) / 255.0
+        image = np.expand_dims(image, 0)
+        prediction = model.predict(image)
+        print(int2class[int(np.argmax(prediction))])
