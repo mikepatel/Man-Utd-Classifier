@@ -60,7 +60,7 @@ if __name__ == "__main__":
         directory=os.path.join(os.getcwd(), "data"),
         target_size=(IMAGE_WIDTH, IMAGE_HEIGHT),
         color_mode="rgb",
-        class_mode="sparse",  # more than 2 classes
+        class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
         shuffle=True
@@ -68,3 +68,136 @@ if __name__ == "__main__":
     )
 
     next(train_data_gen)
+
+    m = tf.keras.Sequential()
+
+    # ----- Stage 1 ----- #
+    # Convolution
+    m.add(tf.keras.layers.Conv2D(
+        filters=32,
+        kernel_size=[3, 3],
+        input_shape=(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS),
+        padding="same",
+        activation=tf.keras.activations.relu
+    ))
+
+    # Convolution
+    m.add(tf.keras.layers.Conv2D(
+        filters=32,
+        kernel_size=[3, 3],
+        padding="same",
+        activation=tf.keras.activations.relu
+    ))
+
+    # Max Pooling
+    m.add(tf.keras.layers.MaxPool2D(
+        pool_size=[2, 2],
+        strides=2
+    ))
+
+    # Dropout
+    m.add(tf.keras.layers.Dropout(
+        rate=0.2
+    ))
+
+    # ----- Stage 2 ----- #
+    # Convolution
+    m.add(tf.keras.layers.Conv2D(
+        filters=64,
+        kernel_size=[3, 3],
+        padding="same",
+        activation=tf.keras.activations.relu
+    ))
+
+    # Convolution
+    m.add(tf.keras.layers.Conv2D(
+        filters=64,
+        kernel_size=[3, 3],
+        padding="same",
+        activation=tf.keras.activations.relu
+    ))
+
+    # Max Pooling
+    m.add(tf.keras.layers.MaxPool2D(
+        pool_size=[2, 2],
+        strides=2
+    ))
+
+    # Dropout
+    m.add(tf.keras.layers.Dropout(
+        rate=0.2
+    ))
+
+    # ----- Stage 3 ----- #
+    # Convolution
+    m.add(tf.keras.layers.Conv2D(
+        filters=128,
+        kernel_size=[3, 3],
+        padding="same",
+        activation=tf.keras.activations.relu
+    ))
+
+    # Convolution
+    m.add(tf.keras.layers.Conv2D(
+        filters=128,
+        kernel_size=[3, 3],
+        padding="same",
+        activation=tf.keras.activations.relu
+    ))
+
+    # Max Pooling
+    m.add(tf.keras.layers.MaxPool2D(
+        pool_size=[2, 2],
+        strides=2
+    ))
+
+    # Dropout
+    m.add(tf.keras.layers.Dropout(
+        rate=0.2
+    ))
+
+    # ----- Stage 4 ----- #
+    # Flatten
+    m.add(tf.keras.layers.Flatten())
+
+    # Dense
+    m.add(tf.keras.layers.Dense(
+        units=256,
+        activation=tf.keras.activations.relu
+    ))
+
+    # Dropout
+    m.add(tf.keras.layers.Dropout(
+        rate=0.5
+    ))
+
+    # Dense - output
+    m.add(tf.keras.layers.Dense(
+        units=num_classes,
+        activation=tf.keras.activations.softmax
+    ))
+
+    m.compile(
+        loss=tf.keras.losses.BinaryCrossentropy,
+        optimmizer=tf.keras.optimizers.Adam(0.0001),
+        metrics=["accuracy"]
+    )
+
+    m.summary()
+
+    history = m.fit(
+        x=train_data_gen,
+        epochs=NUM_EPOCHS
+    )
+
+    m.save(os.path.join(os.getcwd(), "saved_model"))
+
+    model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
+
+    image = cv2.imread(os.path.join(os.getcwd(), "test\\manc.png"))
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+    image = np.array(image).astype(np.float) / 255.0
+    image = np.expand_dims(image, 0)
+    prediction = model.predict(image)
+    print(int2class[int(np.argmax(prediction))])
