@@ -41,16 +41,24 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
+    # convert and save images to rgba
+    q = Image.open(os.path.join(os.getcwd(), "data\\Man United\\manchester-united-fc.jpg"))
+    q = q.convert("RGBA")
+    background = Image.new("RGBA", q.size, (255, 2555, 255))
+    q = Image.alpha_composite(background, q)
+    q = q.convert("RGB")
+    q.show()
+    quit()
+
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         rotation_range=30,  # degrees
-        width_shift_range=0.2,  # interval [-1.0, 1.0)
-        height_shift_range=0.2,  # interval [-1.0, 1.0)
-        brightness_range=[0.05, 0.95],  # 0 no brightness, 1 max brightness
-        shear_range=0.2,  # stretching in degrees
-        zoom_range=0.1,  # less than 1.0 zoom in, more than 1.0 zoom out
-        channel_shift_range=200.0,
+        #width_shift_range=0.2,  # interval [-1.0, 1.0)
+        #height_shift_range=0.2,  # interval [-1.0, 1.0)
+        #brightness_range=[0.05, 0.95],  # 0 no brightness, 1 max brightness
+        #shear_range=0.2,  # stretching in degrees
+        #zoom_range=0.1,  # less than 1.0 zoom in, more than 1.0 zoom out
+        #channel_shift_range=200.0,
         # zca_whitening=True,
-        # channel_shift_range,
         # horizontal_flip=True,
         # vertical_flip=True,
         rescale=1. / 255  # [0, 255] --> [0, 1]
@@ -59,7 +67,8 @@ if __name__ == "__main__":
     train_data_gen = image_generator.flow_from_directory(
         directory=os.path.join(os.getcwd(), "data"),
         target_size=(IMAGE_WIDTH, IMAGE_HEIGHT),
-        color_mode="rgb",
+        #color_mode="rgb",
+        color_mode="rgba",
         class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
@@ -67,7 +76,8 @@ if __name__ == "__main__":
         save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
-    next(train_data_gen)
+    x = next(train_data_gen)
+    print(x[0].shape)
     quit()
 
     m = tf.keras.Sequential()
