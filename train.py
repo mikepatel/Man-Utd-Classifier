@@ -23,8 +23,8 @@ IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 160
 IMAGE_CHANNELS = 3
 
-NUM_EPOCHS = 500
-BATCH_SIZE = 64
+NUM_EPOCHS = 2000
+BATCH_SIZE = 128
 
 
 ################################################################################
@@ -41,14 +41,15 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
+    """
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         rotation_range=30,  # degrees
         width_shift_range=0.2,  # interval [-1.0, 1.0)
         height_shift_range=0.2,  # interval [-1.0, 1.0)
-        brightness_range=[0.2, 0.8],  # 0 no brightness, 1 max brightness
+        brightness_range=[0.05, 0.95],  # 0 no brightness, 1 max brightness
         shear_range=0.2,  # stretching in degrees
-        #zoom_range=[0.5, 1.5],  # less than 1.0 zoom in, more than 1.0 zoom out
-        channel_shift_range=75.0,
+        zoom_range=0.1,  # less than 1.0 zoom in, more than 1.0 zoom out
+        channel_shift_range=200.0,
         # zca_whitening=True,
         # channel_shift_range,
         # horizontal_flip=True,
@@ -175,7 +176,7 @@ if __name__ == "__main__":
     # Dense - output
     m.add(tf.keras.layers.Dense(
         units=num_classes,
-        activation=tf.keras.activations.softmax
+        activation=tf.keras.activations.sigmoid
     ))
 
     m.compile(
@@ -192,16 +193,37 @@ if __name__ == "__main__":
     )
 
     m.save(os.path.join(os.getcwd(), "saved_model"))
+    """
 
     model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
+    """
 
     test_images = [
         "manc.png",
+        "manc_cropped.jpg",
+        "mancw.jpg",
+        "manc_cropped.jpg",
+        "mancw.jpg",
         "manc_cropped.jpg",
         "mancw.jpg"
     ]
 
     for ti in test_images:
+        image = Image.open(os.path.join(os.getcwd(), "test\\"+ti))
+        image = image.convert("RGB")
+        #image.show()
+        image = image.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
+        #image = np.array(image).astype(np.float32) / 255.0
+        image = np.array(image).astype(np.float32)
+        image = image.reshape(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)
+        image = image / 255.0
+        image = np.expand_dims(image, 0)
+        #print(image.shape)
+        prediction = model.predict(image)
+        print(int2class[int(np.argmax(prediction))])
+    """
+
+    """
         image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
@@ -209,3 +231,48 @@ if __name__ == "__main__":
         image = np.expand_dims(image, 0)
         prediction = model.predict(image)
         print(int2class[int(np.argmax(prediction))])
+    """
+
+    capture = cv2.VideoCapture(0)
+    while True:
+        # capture frame by frame
+        ret, frame = capture.read()
+
+        # preprocess image
+        image = frame
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        #image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+
+        # crop webcam frame
+        y, x, channels = image.shape
+        left_x = int(x*0.25)
+        right_x = int(x*0.75)
+        top_y = int(y*0.25)
+        bottom_y = int(y*0.75)
+        image = image[top_y:bottom_y, left_x:right_x]
+        mod_image = image
+
+        image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+
+        Image.fromarray(image).save(os.path.join(os.getcwd(), "t.png"))
+
+        image = np.array(image).astype(np.float32)
+        image = image / 255.0
+        image = np.expand_dims(image, 0)
+
+        # make prediction
+        prediction = model.predict(image)
+        pred_label = int2class[int(np.argmax(prediction))]
+        print(pred_label)
+
+        # display resulting frame
+        cv2.imshow("", mod_image)
+
+        if cv2.waitKey(1) == 27:  # continuous stream, escape key
+            break
+
+        # release capture
+    capture.release()
+    cv2.destroyAllWindows()
