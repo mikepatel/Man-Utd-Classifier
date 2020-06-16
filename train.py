@@ -41,7 +41,6 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
-    """
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         rotation_range=30,  # degrees
         width_shift_range=0.2,  # interval [-1.0, 1.0)
@@ -64,12 +63,12 @@ if __name__ == "__main__":
         class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
-        shuffle=True
-        #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
+        shuffle=True,
+        save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
-    #next(train_data_gen)
-    #quit()
+    next(train_data_gen)
+    quit()
 
     m = tf.keras.Sequential()
 
@@ -193,35 +192,28 @@ if __name__ == "__main__":
     )
 
     m.save(os.path.join(os.getcwd(), "saved_model"))
-    """
 
     model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
-    """
-
     test_images = [
         "manc.png",
-        "manc_cropped.jpg",
-        "mancw.jpg",
-        "manc_cropped.jpg",
-        "mancw.jpg",
         "manc_cropped.jpg",
         "mancw.jpg"
     ]
 
-    for ti in test_images:
-        image = Image.open(os.path.join(os.getcwd(), "test\\"+ti))
-        image = image.convert("RGB")
-        #image.show()
-        image = image.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
-        #image = np.array(image).astype(np.float32) / 255.0
-        image = np.array(image).astype(np.float32)
-        image = image.reshape(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)
-        image = image / 255.0
-        image = np.expand_dims(image, 0)
-        #print(image.shape)
-        prediction = model.predict(image)
-        print(int2class[int(np.argmax(prediction))])
-    """
+    for i in range(3):
+        for ti in test_images:
+            image = Image.open(os.path.join(os.getcwd(), "test\\"+ti))
+            image = image.convert("RGB")
+            #image.show()
+            image = image.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
+            #image = np.array(image).astype(np.float32) / 255.0
+            image = np.array(image).astype(np.float32)
+            image = image.reshape(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)
+            image = image / 255.0
+            image = np.expand_dims(image, 0)
+            #print(image.shape)
+            prediction = model.predict(image)
+            print(int2class[int(np.argmax(prediction))])
 
     """
         image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
