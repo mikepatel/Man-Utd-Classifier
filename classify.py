@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
-    model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
+    #model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
 
     capture = cv2.VideoCapture(0)
     while True:
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
         # preprocess image
         image = frame
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
         # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         # image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
@@ -62,20 +62,21 @@ if __name__ == "__main__":
         top_y = int(y*0.25)
         bottom_y = int(y*0.75)
         image = image[top_y:bottom_y, left_x:right_x]
-        mod_image = image
 
         image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
 
         Image.fromarray(image).save(os.path.join(os.getcwd(), "t.png"))
+
+        mod_image = image
 
         image = np.array(image).astype(np.float32)
         image = image / 255.0
         image = np.expand_dims(image, 0)
 
         # make prediction
-        prediction = model.predict(image)
-        pred_label = int2class[int(np.argmax(prediction))]
-        print(pred_label)
+        #prediction = model.predict(image)
+        #pred_label = int2class[int(np.argmax(prediction))]
+        #print(pred_label)
 
         # display resulting frame
         cv2.imshow("", mod_image)
