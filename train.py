@@ -14,6 +14,7 @@ import os
 import numpy as np
 from PIL import Image
 import cv2
+import shutil
 
 import tensorflow as tf
 
@@ -23,13 +24,18 @@ IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 160
 IMAGE_CHANNELS = 4
 
-NUM_EPOCHS = 500
+NUM_EPOCHS = 1500
 BATCH_SIZE = 128
 
 
 ################################################################################
 # Main
 if __name__ == "__main__":
+    # remove 'saved_model' directory
+    sm_dir = os.path.join(os.getcwd(), "saved_model")
+    if os.path.exists(sm_dir):
+        shutil.rmtree(sm_dir)
+
     # labels
     classes = []
     int2class = {}
@@ -74,8 +80,8 @@ if __name__ == "__main__":
         class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
-        shuffle=True,
-        save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
+        shuffle=True
+        #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
     #x = next(train_data_gen)
