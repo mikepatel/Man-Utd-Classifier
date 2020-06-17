@@ -21,9 +21,9 @@ import tensorflow as tf
 ################################################################################
 IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 160
-IMAGE_CHANNELS = 3
+IMAGE_CHANNELS = 4
 
-NUM_EPOCHS = 2000
+NUM_EPOCHS = 300
 BATCH_SIZE = 128
 
 
@@ -41,6 +41,7 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
+    """
     # convert and save images to rgba
     q = Image.open(os.path.join(os.getcwd(), "data\\Man United\\manchester-united-fc.jpg"))
     q = q.convert("RGBA")
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     q = q.convert("RGB")
     q.show()
     quit()
+    """
 
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         rotation_range=30,  # degrees
@@ -72,13 +74,15 @@ if __name__ == "__main__":
         class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
-        shuffle=True,
-        save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
+        shuffle=True
+        #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
+    """
     x = next(train_data_gen)
     print(x[0].shape)
     quit()
+    """
 
     m = tf.keras.Sequential()
 
@@ -201,9 +205,13 @@ if __name__ == "__main__":
         epochs=NUM_EPOCHS
     )
 
+    # save model
     m.save(os.path.join(os.getcwd(), "saved_model"))
 
+    # ----- TEST ----- #
+    # load model
     model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
+
     test_images = [
         "manc.png",
         "manc_cropped.jpg",
@@ -213,7 +221,7 @@ if __name__ == "__main__":
     for i in range(3):
         for ti in test_images:
             image = Image.open(os.path.join(os.getcwd(), "test\\"+ti))
-            image = image.convert("RGB")
+            image = image.convert("RGBA")
             #image.show()
             image = image.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
             #image = np.array(image).astype(np.float32) / 255.0
@@ -223,7 +231,10 @@ if __name__ == "__main__":
             image = np.expand_dims(image, 0)
             #print(image.shape)
             prediction = model.predict(image)
-            print(int2class[int(np.argmax(prediction))])
+            pred_name = int2class[int(np.argmax(prediction))]
+            print(f'{ti}: {pred_name}')
+
+    quit()
 
     """
         image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
@@ -234,47 +245,3 @@ if __name__ == "__main__":
         prediction = model.predict(image)
         print(int2class[int(np.argmax(prediction))])
     """
-
-    capture = cv2.VideoCapture(0)
-    while True:
-        # capture frame by frame
-        ret, frame = capture.read()
-
-        # preprocess image
-        image = frame
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        #image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
-
-        # crop webcam frame
-        y, x, channels = image.shape
-        left_x = int(x*0.25)
-        right_x = int(x*0.75)
-        top_y = int(y*0.25)
-        bottom_y = int(y*0.75)
-        image = image[top_y:bottom_y, left_x:right_x]
-        mod_image = image
-
-        image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
-
-        Image.fromarray(image).save(os.path.join(os.getcwd(), "t.png"))
-
-        image = np.array(image).astype(np.float32)
-        image = image / 255.0
-        image = np.expand_dims(image, 0)
-
-        # make prediction
-        prediction = model.predict(image)
-        pred_label = int2class[int(np.argmax(prediction))]
-        print(pred_label)
-
-        # display resulting frame
-        cv2.imshow("", mod_image)
-
-        if cv2.waitKey(1) == 27:  # continuous stream, escape key
-            break
-
-        # release capture
-    capture.release()
-    cv2.destroyAllWindows()
