@@ -22,9 +22,9 @@ import tensorflow as tf
 ################################################################################
 IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 160
-IMAGE_CHANNELS = 4
+IMAGE_CHANNELS = 3
 
-NUM_EPOCHS = 1500
+NUM_EPOCHS = 100
 BATCH_SIZE = 128
 
 
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     train_data_gen = image_generator.flow_from_directory(
         directory=os.path.join(os.getcwd(), "data"),
         target_size=(IMAGE_WIDTH, IMAGE_HEIGHT),
-        #color_mode="rgb",
-        color_mode="rgba",
+        color_mode="rgb",
+        #color_mode="rgba",
         class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     #x = next(train_data_gen)
     #quit()
-
+    """
     m = tf.keras.Sequential()
 
     # ----- Stage 1 ----- #
@@ -200,6 +200,34 @@ if __name__ == "__main__":
         optimmizer=tf.keras.optimizers.Adam(0.0001),
         metrics=["accuracy"]
     )
+    """
+    vgg16 = tf.keras.applications.vgg16.VGG16(
+        input_shape=(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS),
+        include_top=False
+    )
+
+    for layer in vgg16.layers[:-4]:
+        layer.trainable = False
+
+    m = tf.keras.models.Sequential()
+
+    m.add(vgg16)
+    m.add(tf.keras.layers.Flatten())
+    m.add(tf.keras.layers.Dense(
+        units=1024,
+        activation=tf.keras.activations.relu
+    ))
+    m.add(tf.keras.layers.Dropout(0.5))
+    m.add(tf.keras.layers.Dense(
+        units=2,
+        activation=tf.keras.activations.sigmoid
+    ))
+
+    m.compile(
+        loss=tf.keras.losses.sparse_categorical_crossentropy,
+        optimmizer=tf.keras.optimizers.Adam(0.0001),
+        metrics=["accuracy"]
+    )
 
     m.summary()
 
@@ -244,7 +272,7 @@ if __name__ == "__main__":
             """
 
             image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
             image = np.array(image).astype(np.float) / 255.0
             image = np.expand_dims(image, 0)
