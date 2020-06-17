@@ -54,13 +54,13 @@ if __name__ == "__main__":
 
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         rotation_range=30,  # degrees
-        #width_shift_range=0.2,  # interval [-1.0, 1.0)
-        #height_shift_range=0.2,  # interval [-1.0, 1.0)
-        #brightness_range=[0.05, 0.95],  # 0 no brightness, 1 max brightness
-        #shear_range=0.2,  # stretching in degrees
-        #zoom_range=0.1,  # less than 1.0 zoom in, more than 1.0 zoom out
-        #channel_shift_range=200.0,
-        # zca_whitening=True,
+        width_shift_range=0.5,  # interval [-1.0, 1.0)
+        height_shift_range=0.5,  # interval [-1.0, 1.0)
+        brightness_range=[0.3, 0.95],  # 0 no brightness, 1 max brightness
+        shear_range=20,  # stretching in degrees
+        zoom_range=[0.7, 1.3],  # less than 1.0 zoom in, more than 1.0 zoom out
+        #channel_shift_range=100.0,
+        #zca_whitening=True,
         # horizontal_flip=True,
         # vertical_flip=True,
         rescale=1. / 255  # [0, 255] --> [0, 1]
@@ -78,11 +78,8 @@ if __name__ == "__main__":
         #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
-    """
-    x = next(train_data_gen)
-    print(x[0].shape)
-    quit()
-    """
+    #x = next(train_data_gen)
+    #quit()
 
     m = tf.keras.Sequential()
 
@@ -232,7 +229,7 @@ if __name__ == "__main__":
             #print(image.shape)
             prediction = model.predict(image)
             pred_name = int2class[int(np.argmax(prediction))]
-            print(f'{ti}: {pred_name}')
+            print(f'{ti}: {pred_name}\n')
 
     quit()
 
