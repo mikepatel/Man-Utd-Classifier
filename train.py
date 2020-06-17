@@ -23,7 +23,7 @@ IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 160
 IMAGE_CHANNELS = 4
 
-NUM_EPOCHS = 300
+NUM_EPOCHS = 500
 BATCH_SIZE = 128
 
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # convert and save images to rgba
     q = Image.open(os.path.join(os.getcwd(), "data\\Man United\\manchester-united-fc.jpg"))
     q = q.convert("RGBA")
-    background = Image.new("RGBA", q.size, (255, 2555, 255))
+    background = Image.new("RGBA", q.size, (255, 255, 255))
     q = Image.alpha_composite(background, q)
     q = q.convert("RGB")
     q.show()
@@ -54,9 +54,9 @@ if __name__ == "__main__":
 
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         rotation_range=30,  # degrees
-        width_shift_range=0.5,  # interval [-1.0, 1.0)
-        height_shift_range=0.5,  # interval [-1.0, 1.0)
-        brightness_range=[0.3, 0.95],  # 0 no brightness, 1 max brightness
+        width_shift_range=0.3,  # interval [-1.0, 1.0)
+        height_shift_range=0.3,  # interval [-1.0, 1.0)
+        brightness_range=[0.5, 1.0],  # 0 no brightness, 1 max brightness
         shear_range=20,  # stretching in degrees
         zoom_range=[0.7, 1.3],  # less than 1.0 zoom in, more than 1.0 zoom out
         #channel_shift_range=100.0,
@@ -74,8 +74,8 @@ if __name__ == "__main__":
         class_mode="binary",  # more than 2 classes
         classes=classes,
         batch_size=BATCH_SIZE,
-        shuffle=True
-        #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
+        shuffle=True,
+        save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
     )
 
     #x = next(train_data_gen)
@@ -209,36 +209,39 @@ if __name__ == "__main__":
     # load model
     model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
 
+    test_images = []
+    for i in os.listdir(os.path.join(os.getcwd(), "test")):
+        test_images.append(i)
+
+    """
     test_images = [
         "manc.png",
         "manc_cropped.jpg",
         "mancw.jpg"
     ]
+    """
 
     for i in range(3):
         for ti in test_images:
+            """
             image = Image.open(os.path.join(os.getcwd(), "test\\"+ti))
             image = image.convert("RGBA")
             #image.show()
             image = image.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
-            #image = np.array(image).astype(np.float32) / 255.0
             image = np.array(image).astype(np.float32)
             image = image.reshape(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)
             image = image / 255.0
             image = np.expand_dims(image, 0)
-            #print(image.shape)
             prediction = model.predict(image)
             pred_name = int2class[int(np.argmax(prediction))]
             print(f'{ti}: {pred_name}\n')
+            """
 
-    quit()
-
-    """
-        image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
-        image = np.array(image).astype(np.float) / 255.0
-        image = np.expand_dims(image, 0)
-        prediction = model.predict(image)
-        print(int2class[int(np.argmax(prediction))])
-    """
+            image = cv2.imread(os.path.join(os.getcwd(), "test\\"+ti))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
+            image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+            image = np.array(image).astype(np.float) / 255.0
+            image = np.expand_dims(image, 0)
+            prediction = model.predict(image)
+            pred_name = int2class[int(np.argmax(prediction))]
+            print(f'{ti}: {pred_name}\n')
