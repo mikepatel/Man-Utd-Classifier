@@ -12,6 +12,7 @@ File description:
 # Imports
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
 import shutil
@@ -20,26 +21,23 @@ import tensorflow as tf
 
 
 ################################################################################
-IMAGE_WIDTH = 160
-IMAGE_HEIGHT = 160
+IMAGE_WIDTH = 128
+IMAGE_HEIGHT = 128
 IMAGE_CHANNELS = 3
 
-NUM_EPOCHS = 100
-BATCH_SIZE = 128
+NUM_EPOCHS = 25
+BATCH_SIZE = 16
 
 
 ################################################################################
 # Main
 if __name__ == "__main__":
-    # remove 'saved_model' directory
-    sm_dir = os.path.join(os.getcwd(), "saved_model")
-    if os.path.exists(sm_dir):
-        shutil.rmtree(sm_dir)
-
-    # labels
+    # ----- ETL ----- #
+    # ETL = Extraction, Transformation, Load
+    DATA_DIR = os.path.join(os.getcwd(), "data")
     classes = []
     int2class = {}
-    directories = os.listdir(os.path.join(os.getcwd(), "data"))
+    directories = os.listdir(DATA_DIR)
     for i in range(len(directories)):
         name = directories[i]
         classes.append(name)
@@ -47,197 +45,165 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
-    """
-    # convert and save images to rgba
-    q = Image.open(os.path.join(os.getcwd(), "data\\Man United\\manchester-united-fc.jpg"))
-    q = q.convert("RGBA")
-    background = Image.new("RGBA", q.size, (255, 255, 255))
-    q = Image.alpha_composite(background, q)
-    q = q.convert("RGB")
-    q.show()
-    quit()
-    """
+    # size of datasets
+    num_train_images = 0
+    for d in directories:
+        images = os.listdir(os.path.join(DATA_DIR, d))
+        num_train_images += len(images)
 
+    print(f'Classes: {classes}')
+    print(f'Number of classes: {num_classes}')
+    print(f'Number of total train images: {num_train_images}')
+
+    # image generator
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-        rotation_range=30,  # degrees
+        rotation_range=20,  # degrees
         width_shift_range=0.3,  # interval [-1.0, 1.0)
-        height_shift_range=0.3,  # interval [-1.0, 1.0)
-        brightness_range=[0.5, 1.0],  # 0 no brightness, 1 max brightness
-        shear_range=20,  # stretching in degrees
-        zoom_range=[0.7, 1.3],  # less than 1.0 zoom in, more than 1.0 zoom out
-        #channel_shift_range=100.0,
-        #zca_whitening=True,
-        # horizontal_flip=True,
-        # vertical_flip=True,
-        rescale=1. / 255  # [0, 255] --> [0, 1]
+        height_shift_range=0.3,  # interval [-1.0, 1.0),
+        brightness_range=[0.5, 1.0],  # 0 is no brightness, 1 is max brightness
+        zoom_range=[0.7, 1.3],  # less than 1.0 is zoom in, more than 1.0 is zoom out
+        rescale=1./255  # [0, 255] --> [0, 1]
     )
 
     train_data_gen = image_generator.flow_from_directory(
-        directory=os.path.join(os.getcwd(), "data"),
+        directory=DATA_DIR,
         target_size=(IMAGE_WIDTH, IMAGE_HEIGHT),
-        color_mode="rgb",
-        #color_mode="rgba",
-        class_mode="binary",  # more than 2 classes
-        classes=classes,
+        class_mode="binary",
         batch_size=BATCH_SIZE,
         shuffle=True
-        #save_to_dir=os.path.join(os.getcwd(), "x")  # temporary for visualising
+        #save_to_dir=os.path.join(os.getcwd(), "temp")
     )
 
-    #x = next(train_data_gen)
-    #quit()
-    """
-    m = tf.keras.Sequential()
+    #next(train_data_gen)
 
-    # ----- Stage 1 ----- #
-    # Convolution
-    m.add(tf.keras.layers.Conv2D(
+    # ----- MODEL ----- #
+    model = tf.keras.Sequential()
+
+    # Convolution 1
+    model.add(tf.keras.layers.Conv2D(
         filters=32,
-        kernel_size=[3, 3],
+        kernel_size=(3, 3),
         input_shape=(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS),
         padding="same",
         activation=tf.keras.activations.relu
     ))
 
-    # Convolution
-    m.add(tf.keras.layers.Conv2D(
-        filters=32,
-        kernel_size=[3, 3],
-        padding="same",
-        activation=tf.keras.activations.relu
-    ))
-
-    # Max Pooling
-    m.add(tf.keras.layers.MaxPool2D(
-        pool_size=[2, 2],
-        strides=2
-    ))
-
-    # Dropout
-    m.add(tf.keras.layers.Dropout(
-        rate=0.2
-    ))
-
-    # ----- Stage 2 ----- #
-    # Convolution
-    m.add(tf.keras.layers.Conv2D(
+    # Convolution 2
+    model.add(tf.keras.layers.Conv2D(
         filters=64,
-        kernel_size=[3, 3],
+        kernel_size=(3, 3),
+        strides=2,
         padding="same",
         activation=tf.keras.activations.relu
     ))
 
-    # Convolution
-    m.add(tf.keras.layers.Conv2D(
-        filters=64,
-        kernel_size=[3, 3],
-        padding="same",
-        activation=tf.keras.activations.relu
-    ))
-
-    # Max Pooling
-    m.add(tf.keras.layers.MaxPool2D(
-        pool_size=[2, 2],
-        strides=2
-    ))
-
-    # Dropout
-    m.add(tf.keras.layers.Dropout(
-        rate=0.2
-    ))
-
-    # ----- Stage 3 ----- #
-    # Convolution
-    m.add(tf.keras.layers.Conv2D(
+    # Convolution 3
+    model.add(tf.keras.layers.Conv2D(
         filters=128,
-        kernel_size=[3, 3],
+        kernel_size=(3, 3),
+        strides=2,
         padding="same",
         activation=tf.keras.activations.relu
     ))
 
-    # Convolution
-    m.add(tf.keras.layers.Conv2D(
-        filters=128,
-        kernel_size=[3, 3],
+    # Convolution 4
+    model.add(tf.keras.layers.Conv2D(
+        filters=256,
+        kernel_size=(3, 3),
+        strides=2,
         padding="same",
         activation=tf.keras.activations.relu
     ))
 
-    # Max Pooling
-    m.add(tf.keras.layers.MaxPool2D(
-        pool_size=[2, 2],
-        strides=2
-    ))
-
-    # Dropout
-    m.add(tf.keras.layers.Dropout(
-        rate=0.2
-    ))
-
-    # ----- Stage 4 ----- #
     # Flatten
-    m.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Flatten())
 
-    # Dense
-    m.add(tf.keras.layers.Dense(
-        units=256,
+    # Fully connected
+    model.add(tf.keras.layers.Dense(
+        units=128,
         activation=tf.keras.activations.relu
     ))
 
-    # Dropout
-    m.add(tf.keras.layers.Dropout(
-        rate=0.5
-    ))
-
-    # Dense - output
-    m.add(tf.keras.layers.Dense(
-        units=num_classes,
+    # Output
+    model.add(tf.keras.layers.Dense(
+        units=1,
         activation=tf.keras.activations.sigmoid
     ))
 
-    m.compile(
-        loss=tf.keras.losses.sparse_categorical_crossentropy,
-        optimmizer=tf.keras.optimizers.Adam(0.0001),
-        metrics=["accuracy"]
-    )
-    """
-    vgg16 = tf.keras.applications.vgg16.VGG16(
-        input_shape=(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS),
-        include_top=False
-    )
-
-    for layer in vgg16.layers[:-4]:
-        layer.trainable = False
-
-    m = tf.keras.models.Sequential()
-
-    m.add(vgg16)
-    m.add(tf.keras.layers.Flatten())
-    m.add(tf.keras.layers.Dense(
-        units=1024,
-        activation=tf.keras.activations.relu
-    ))
-    m.add(tf.keras.layers.Dropout(0.5))
-    m.add(tf.keras.layers.Dense(
-        units=2,
-        activation=tf.keras.activations.sigmoid
-    ))
-
-    m.compile(
-        loss=tf.keras.losses.sparse_categorical_crossentropy,
-        optimmizer=tf.keras.optimizers.Adam(0.0001),
+    model.compile(
+        loss=tf.keras.losses.binary_crossentropy,
+        optimizer=tf.keras.optimizers.Adam(),
         metrics=["accuracy"]
     )
 
-    m.summary()
+    model.summary()
 
-    history = m.fit(
+    # ----- TRAIN ----- #
+    history = model.fit(
         x=train_data_gen,
-        epochs=NUM_EPOCHS
+        epochs=NUM_EPOCHS,
+        steps_per_epoch=num_train_images // BATCH_SIZE
     )
+
+    model.save(os.path.join(os.getcwd(), "saved_model"))
+
+    # plot accuracy
+    plt.plot(history.history["accuracy"], label="accuracy")
+    plt.title("Training Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.grid()
+    plt.savefig(os.path.join(os.getcwd(), "training"))
+
+    # ----- TEST ----- #
+    TEST_DIR = os.path.join(os.getcwd(), "test")
+    test_images = []
+    for i in os.listdir(TEST_DIR):
+        test_images.append(i)
+
+    for ti in test_images:
+        image = Image.open(os.path.join(TEST_DIR, ti))
+
+        image = image.convert("RGB")
+        image = image.resize((IMAGE_WIDTH, IMAGE_HEIGHT))
+        image = np.array(image)
+        image = image.reshape(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS)
+        image = image / 255.0
+        image = np.expand_dims(image, 0)
+
+        prediction = model.predict(image)
+        prediction = prediction[0][0]
+        prediction = int(np.round(prediction))
+        prediction = int2class[prediction]
+        print(prediction)
+        print()
+
+    quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # save model
-    m.save(os.path.join(os.getcwd(), "saved_model"))
+    #m.save(os.path.join(os.getcwd(), "saved_model"))
 
     # ----- TEST ----- #
     # load model
