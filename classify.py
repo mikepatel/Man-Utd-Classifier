@@ -19,8 +19,8 @@ import tensorflow as tf
 
 
 ################################################################################
-IMAGE_WIDTH = 160
-IMAGE_HEIGHT = 160
+IMAGE_WIDTH = 128
+IMAGE_HEIGHT = 128
 IMAGE_CHANNELS = 3
 
 NUM_EPOCHS = 2000
@@ -30,10 +30,10 @@ BATCH_SIZE = 128
 ################################################################################
 # Main
 if __name__ == "__main__":
-    # labels
+    DATA_DIR = os.path.join(os.getcwd(), "data")
     classes = []
     int2class = {}
-    directories = os.listdir(os.path.join(os.getcwd(), "data"))
+    directories = os.listdir(DATA_DIR)
     for i in range(len(directories)):
         name = directories[i]
         classes.append(name)
@@ -41,7 +41,18 @@ if __name__ == "__main__":
 
     num_classes = len(classes)
 
-    #model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
+    # size of datasets
+    num_train_images = 0
+    for d in directories:
+        images = os.listdir(os.path.join(DATA_DIR, d))
+        num_train_images += len(images)
+
+    print(f'Classes: {classes}')
+    print(f'Number of classes: {num_classes}')
+    print(f'Number of total train images: {num_train_images}')
+
+    model = tf.keras.models.load_model(os.path.join(os.getcwd(), "saved_model"))
+    model.summary()
 
     capture = cv2.VideoCapture(0)
     while True:
@@ -50,7 +61,7 @@ if __name__ == "__main__":
 
         # preprocess image
         image = frame
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         # image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
@@ -65,18 +76,20 @@ if __name__ == "__main__":
 
         image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
 
-        Image.fromarray(image).save(os.path.join(os.getcwd(), "t.png"))
+        #Image.fromarray(image).save(os.path.join(os.getcwd(), "t.png"))
 
         mod_image = image
 
-        image = np.array(image).astype(np.float32)
+        image = np.array(image)
         image = image / 255.0
         image = np.expand_dims(image, 0)
 
         # make prediction
-        #prediction = model.predict(image)
-        #pred_label = int2class[int(np.argmax(prediction))]
-        #print(pred_label)
+        prediction = model.predict(image)
+        prediction = prediction[0][0]
+        prediction = int(np.round(prediction))
+        prediction = int2class[prediction]
+        print(prediction)
 
         # display resulting frame
         cv2.imshow("", mod_image)
