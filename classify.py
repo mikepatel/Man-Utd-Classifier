@@ -92,7 +92,8 @@ if __name__ == "__main__":
         print(prediction)
 
         # display resulting frame
-        cv2.imshow("", mod_image)
+        #cv2.imshow("", mod_image)
+        cv2.imshow("", frame)
 
         if cv2.waitKey(1) == 27:  # continuous stream, escape key
             break
